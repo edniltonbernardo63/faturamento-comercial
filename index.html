@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Pet Voyage - Demonstração</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #f4f2fb; --card: #ffffff; --ink: #2a2640; --muted: #615c7d; --line: #dedaf0; --track: #ebe8f7;
+    --panel: #2f2a4a; --panel-ink: #f6f4ff; --panel-muted: #beb8dd;
+    --ring: #b9a8ff; --neg: #ff9a7d; --pos: #5be3b0;
+    --bar: #7c5cff; --accent: #7c5cff; --accent-soft: #ebe6ff;
+    --btn-bg: #5b3fd6; --btn-ink: #ffffff;
+    --ok: #12805c; --ok-bg: #dcf2e8;
+    --warn: #8a5300; --warn-bg: #fdecc8;
+    --bad: #b73a1e; --bad-bg: #fbe1d9;
+    --display: 'Raleway', 'Trebuchet MS', system-ui, sans-serif;
+    --body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #14111f; --card: #1e1a2e; --ink: #f0eeff; --muted: #a9a4c6; --line: #302a4a; --track: #29233f;
+      --panel: #2a2347; --bar: #9b82ff; --accent-soft: #2d2650;
+      --btn-bg: #b9a8ff; --btn-ink: #1a1233;
+      --ok: #5be3b0; --ok-bg: #12382f;
+      --warn: #f0b24a; --warn-bg: #3b2d10;
+      --bad: #ff8a6b; --bad-bg: #3d1d16;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: .55; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  h1, h2, h3, p { margin: 0; }
+  .num { font-family: var(--display); letter-spacing: -.02em; }
+
+  .splash { min-height: 100vh; display: grid; place-content: center; color: var(--muted); }
+
+  /* ---------- botões e campos ---------- */
+  .btn { border: 0; border-radius: 999px; padding: 12px 22px; background: var(--btn-bg); color: var(--btn-ink); font-weight: 600; }
+  .btn.sm { padding: 7px 14px; font-size: .85rem; }
+  .btn.line { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  .btn.danger { background: var(--bad); color: #fff; }
+  .ghost { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; color: var(--ink); font-size: .9rem; }
+  .field { display: grid; gap: 6px; margin-bottom: 14px; }
+  .field > span { font-size: .88rem; color: var(--muted); font-weight: 500; }
+  .field input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--page); color: var(--ink); }
+  .field input::placeholder { color: var(--muted); opacity: .8; }
+  .field .hint { font-size: .8rem; color: var(--muted); font-weight: 400; }
+  .pw { position: relative; }
+  .pw input { padding-right: 84px; }
+  .pw button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--muted); padding: 6px 10px; border-radius: 8px; font-size: .85rem; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .msg { border-radius: 12px; padding: 11px 14px; font-size: .92rem; margin-bottom: 16px; }
+  .msg.erro { background: var(--bad-bg); color: var(--bad); }
+  .msg.aviso { background: var(--warn-bg); color: var(--warn); }
+  .msg.ok { background: var(--ok-bg); color: var(--ok); }
+
+  .seg-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--track); }
+  .seg-tabs button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+  .seg-tabs button[aria-selected="true"], .seg-tabs button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(40,30,80,.15); }
+  .seg-tabs.sm button { padding: 6px 13px; font-size: .88rem; }
+
+  /* ---------- entrada ---------- */
+  .auth { min-height: 100vh; display: grid; grid-template-columns: minmax(300px, 5fr) 6fr; }
+  .auth-side { background: var(--panel); color: var(--panel-ink); padding: 56px 48px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+  .demo-tag { position: fixed; right: 12px; bottom: 12px; z-index: 50; background: var(--panel); color: var(--panel-ink); border-radius: 999px; padding: 7px 14px; font-size: .78rem; font-weight: 600; letter-spacing: .04em; box-shadow: 0 4px 16px rgba(40,30,80,.25); pointer-events: none; }
+  .demo-box { background: var(--accent-soft); color: var(--ink); border-radius: 14px; padding: 12px 14px; font-size: .88rem; margin-bottom: 16px; }
+  .demo-box code { font-family: var(--body); font-weight: 600; user-select: all; }
+  .demo-box button { margin-top: 8px; }
+  .logo { display: inline-flex; align-items: center; background: #fff; border-radius: 12px; padding: 6px 12px; }
+  .logo img { display: block; height: 100%; width: auto; }
+  .auth-side .logo { align-self: flex-start; height: 88px; padding: 8px 16px; border-radius: 16px; }
+  .side .logo { height: 58px; align-self: flex-start; padding: 6px 12px; border: 1px solid var(--line); }
+  .auth-main .logo-m { display: none; }
+  .brand { font-family: var(--display); font-weight: 700; font-size: 1.05rem; }
+  .auth-side h1 { font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 3.2vw, 2.4rem); line-height: 1.15; max-width: 14ch; }
+  .auth-side p { color: var(--panel-muted); max-width: 38ch; }
+  .auth-side ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 10px; color: var(--panel-ink); }
+  .auth-side li { padding-left: 18px; position: relative; }
+  .auth-side li::before { content: ""; position: absolute; left: 0; top: .6em; width: 8px; height: 8px; border-radius: 2px; background: var(--ring); }
+  .auth-main { display: grid; place-items: center; padding: 32px 20px; }
+  .auth-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; }
+  .auth-card .seg-tabs { display: flex; margin-bottom: 22px; }
+  .auth-card .seg-tabs button { flex: 1; }
+  .auth-card .btn { width: 100%; margin-top: 4px; }
+
+  /* ---------- aplicativo ---------- */
+  #app:not([hidden]) { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+  .side { position: sticky; top: 0; align-self: start; height: 100vh; background: var(--card); border-right: 1px solid var(--line); padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; }
+  .tabs { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .tabs button { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; padding: 12px 14px; border-radius: 12px; color: var(--muted); font-weight: 600; font-size: .98rem; border-left: 3px solid transparent; }
+  .tabs button:hover { background: var(--track); color: var(--ink); }
+  .tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); border-left-color: var(--accent); }
+  .tabs svg { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button[aria-selected="true"] svg { stroke: var(--accent); }
+  .who { display: grid; gap: 8px; }
+  .who .ghost { text-align: center; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 16px 56px; }
+
+  .cal { margin-bottom: 18px; padding: 16px 18px; }
+  .cal-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
+  .cal-ano { display: flex; align-items: center; gap: 6px; }
+  .cal-ano strong { min-width: 3.4em; text-align: center; font-size: 1.1rem; }
+  .cal-nav { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 1.2rem; line-height: 1; }
+  .cal-nav:hover:not(:disabled) { background: var(--track); }
+  .cal-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .mes { display: grid; gap: 2px; justify-items: center; padding: 10px 4px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-weight: 600; text-transform: capitalize; }
+  .mes small { font-weight: 500; font-size: .72rem; color: var(--muted); text-transform: none; }
+  .mes:hover:not(:disabled):not([aria-pressed="true"]) { border-color: var(--accent); }
+  .mes:disabled { background: transparent; border-style: dashed; color: var(--muted); opacity: .55; }
+  .mes[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .mes[aria-pressed="true"] small { color: #fff; }
+  .chip-btn { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 15px; font-size: .9rem; }
+  .chip-btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .estado { margin-left: auto; color: var(--muted); font-size: .82rem; }
+  .linkbtn { border: 0; background: transparent; color: var(--muted); text-decoration: underline; padding: 4px; font-size: .82rem; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 22px; }
+  .card-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+  .card h2 { font-family: var(--display); font-size: 1rem; font-weight: 700; }
+  .sub { color: var(--muted); font-size: .88rem; margin-top: 4px; }
+  .empty { color: var(--muted); padding: 18px 0; }
+  .aviso-bloco { background: var(--warn-bg); color: var(--warn); border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; font-size: .88rem; }
+
+  /* metas */
+  .hero { background: var(--panel); color: var(--panel-ink); border-radius: 28px; padding: 28px; display: grid; grid-template-columns: 240px 1fr; gap: 28px; align-items: center; }
+  .gauge { position: relative; width: 240px; height: 240px; }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge .bg { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 18; }
+  .gauge .fg { fill: none; stroke: var(--ring); stroke-width: 18; stroke-linecap: round; stroke-dasharray: 552.92; stroke-dashoffset: 552.92; transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1); }
+  .gauge .mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .gauge .mid .p { font-family: var(--display); font-size: 2.3rem; font-weight: 700; }
+  .gauge .mid .l { color: var(--panel-muted); font-size: .85rem; margin-top: 2px; }
+  .hero .k { color: var(--panel-muted); font-size: .95rem; }
+  .hero .vendas { font-family: var(--display); font-weight: 700; font-size: clamp(1.9rem, 6vw, 3.3rem); line-height: 1.1; margin: 6px 0 18px; }
+  .saldo { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 18px; border-radius: 16px; background: rgba(255,255,255,.08); }
+  .saldo .t { color: var(--panel-muted); font-size: .85rem; }
+  .saldo .v { font-family: var(--display); font-weight: 700; font-size: 1.35rem; }
+  .saldo.neg .v { color: var(--neg); }
+  .saldo.pos .v { color: var(--pos); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; }
+  .tile .k { color: var(--muted); font-size: .85rem; }
+  .tile .v { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin-top: 8px; }
+  .tile .n { color: var(--muted); font-size: .8rem; margin-top: 6px; }
+  .tile.destaque { border-color: var(--ok); }
+  .tile.destaque .v { color: var(--ok); }
+  .bar { height: 8px; border-radius: 4px; background: var(--track); margin-top: 12px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; background: var(--ok); }
+  .chip { display: inline-block; font-family: var(--display); font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--track); margin-left: 8px; vertical-align: middle; color: var(--ink); }
+
+  /* gráfico de serviços */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .bars { --lab: 190px; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .brow { display: grid; grid-template-columns: minmax(120px, 230px) 1fr; gap: 14px; align-items: center; min-height: 34px; border-radius: 8px; }
+  .brow:hover, .brow:focus-visible { background: var(--page); }
+  .bl { font-size: .92rem; line-height: 1.25; }
+  .bt { display: flex; align-items: center; gap: 10px; border-left: 1px solid var(--line); min-height: 28px; }
+  .bb { display: block; flex: 0 0 auto; height: 20px; background: var(--bar); border-radius: 0 4px 4px 0; }
+  .bv { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+  .bv b { font-family: var(--display); font-size: 1rem; font-weight: 700; }
+  .bm { color: var(--muted); font-size: .8rem; }
+  .brow.zero .bl, .brow.zero .bv b { color: var(--muted); }
+  .tscroll { overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .tbl th, .tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+  .tbl th { color: var(--muted); font-weight: 500; font-size: .85rem; }
+  .tbl .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl tfoot td { font-weight: 600; border-bottom: 0; }
+
+  .tip { position: fixed; z-index: 50; pointer-events: none; background: var(--panel); color: var(--panel-ink); border-radius: 12px; padding: 10px 14px; font-size: .85rem; line-height: 1.5; box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: 260px; }
+  .tip b { display: block; font-size: .92rem; margin-bottom: 2px; }
+  .tip span { color: var(--panel-muted); }
+
+  /* ranking de vendedoras */
+  .rank { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 14px; }
+  .rk { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 22px; }
+  .rk.first { --card: var(--panel); --ink: var(--panel-ink); --muted: var(--panel-muted); --line: rgba(255,255,255,.16); --track: rgba(255,255,255,.14); --bar: var(--ring); background: var(--panel); color: var(--panel-ink); border-color: var(--panel); }
+  .rk-top { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
+  .pos { width: 40px; height: 40px; border-radius: 50%; display: grid; place-content: center; background: var(--track); font-family: var(--display); font-weight: 700; }
+  .rk.first .pos { background: var(--ring); color: #0b1230; }
+  .rk-name h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; }
+  .rk-name p { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  .rk-val { text-align: right; }
+  .rk-val .big { display: block; font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1.15; }
+  .rk-val .mut { color: var(--muted); font-size: .78rem; }
+  .rk-share { height: 6px; border-radius: 3px; background: var(--track); margin: 16px 0 14px; overflow: hidden; }
+  .rk-share i { display: block; height: 100%; background: var(--bar); border-radius: 3px; }
+  .rk-fin { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0 0 16px; }
+  .rk-fin div { display: grid; }
+  .rk-fin dt { color: var(--muted); font-size: .8rem; }
+  .rk-fin dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rk-sv-h, .rk-sv li { display: grid; grid-template-columns: 1fr 56px 130px; gap: 10px; align-items: baseline; }
+  .rk-sv-h { color: var(--muted); font-size: .8rem; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .rk-sv-h span:nth-child(n+2), .rk-sv li span:nth-child(n+2) { text-align: right; }
+  .rk-sv { list-style: none; margin: 0; padding: 0; }
+  .rk-sv li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: .92rem; }
+  .rk-sv li:last-child { border-bottom: 0; }
+  .rk-sv .v, .rk-sv .q { font-variant-numeric: tabular-nums; }
+
+  dialog { border: 1px solid var(--line); border-radius: 22px; background: var(--card); color: var(--ink); padding: 24px; width: min(400px, 92vw); }
+  dialog::backdrop { background: rgba(16, 10, 36, .55); }
+  dialog h2 { font-family: var(--display); font-size: 1rem; margin-bottom: 16px; }
+  .dlg-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+  @media (max-width: 860px) {
+    .auth { grid-template-columns: 1fr; }
+    .auth-side { padding: 28px 22px; gap: 12px; }
+    .auth-side ul { display: none; }
+    .auth-side h1 { max-width: none; }
+  }
+  @media (max-width: 860px) {
+    #app:not([hidden]) { grid-template-columns: 1fr; }
+    .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .side .logo { height: 48px; }
+    .tabs { order: 3; flex: 1 1 100%; flex-direction: row; gap: 4px; }
+    .tabs button { flex: 1; justify-content: center; padding: 10px 6px; font-size: .9rem; border-left: 0; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; }
+    .tabs button[aria-selected="true"] { border-bottom-color: var(--accent); }
+    .tabs svg { display: none; }
+    .who { margin-left: auto; display: flex; }
+  }
+  @media (max-width: 720px) {
+    .cal-grid { grid-template-columns: repeat(4, 1fr); }
+    .hero { grid-template-columns: 1fr; padding: 22px; justify-items: center; text-align: center; }
+    .gauge { width: 200px; height: 200px; }
+    .estado { margin-left: 0; width: 100%; }
+    .rk-top { grid-template-columns: auto 1fr; }
+    .rk-val { grid-column: 1 / -1; text-align: left; }
+  }
+  @media (max-width: 560px) {
+    .row2 { grid-template-columns: 1fr; }
+    .bars { --lab: 56px; }
+    .bm { display: none; }
+    .brow { grid-template-columns: 110px 1fr; gap: 10px; }
+    .rk-sv-h, .rk-sv li { grid-template-columns: 1fr 40px 100px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gauge .fg { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="demo-tag">DEMONSTRAÇÃO · DADOS FICTÍCIOS</div>
+<div class="splash" id="splash">Carregando…</div>
+
+<!-- ===== Entrar / Criar cadastro ===== -->
+<main class="auth" id="auth" hidden>
+  <section class="auth-side">
+    <div class="logo"><svg viewBox="0 0 250 80" role="img" aria-label="Pet Voyage" style="height:100%;width:auto;display:block"><circle cx="38" cy="40" r="26" fill="#7c5cff"/><path d="M26 44c0-6 5-10 12-10s12 4 12 10-5 8-12 8-12-2-12-8z" fill="#fff"/><circle cx="29" cy="30" r="3.4" fill="#fff"/><circle cx="38" cy="26" r="3.4" fill="#fff"/><circle cx="47" cy="30" r="3.4" fill="#fff"/><path d="M62 18l24-6-14 12z" fill="#b9a8ff"/><text x="76" y="46" font-family="Raleway,Trebuchet MS,sans-serif" font-weight="800" font-size="25" fill="#2f2a4a">PET<tspan font-weight="500">VOYAGE</tspan></text><text x="77" y="64" font-family="Raleway,Trebuchet MS,sans-serif" font-weight="600" font-size="9.5" letter-spacing="2.4" fill="#7c5cff">TRANSPORTE DE ANIMAIS</text></svg></div>
+    <h1>Faturamento de Pet e Travel</h1>
+    <p>Os serviços vendidos em cada mês, o ranking das vendedoras e as metas, em um só painel.</p>
+    <ul>
+      <li>Quantidade de cada serviço lançado</li>
+      <li>Valor vendido por vendedora</li>
+      <li>Cadastro só para nomes da lista de acessos liberados</li>
+    </ul>
+  </section>
+  <section class="auth-main">
+    <div class="auth-card">
+      <div class="seg-tabs" role="tablist" aria-label="Entrar ou criar cadastro">
+        <button type="button" role="tab" id="tabEntrar" aria-selected="true" aria-controls="formEntrar">Entrar</button>
+        <button type="button" role="tab" id="tabCriar" aria-selected="false" aria-controls="formCriar">Criar cadastro</button>
+      </div>
+      <div id="authMsg" class="msg" role="alert" hidden></div>
+
+      <div class="demo-box" id="demoBox">Demonstração com dados fictícios. Para entrar, use <code>demo@exemplo.com</code> e a senha <code>demo12345</code>.<br><button type="button" class="btn sm line" id="demoPreencher">Preencher para mim</button></div>
+      <form id="formEntrar" novalidate>
+        <label class="field"><span>E-mail</span>
+          <input id="eEmail" type="email" autocomplete="username" inputmode="email" required>
+        </label>
+        <label class="field"><span>Senha</span>
+          <span class="pw">
+            <input id="eSenha" type="password" autocomplete="current-password" required>
+            <button type="button" data-ver="eSenha" aria-pressed="false">Mostrar</button>
+          </span>
+        </label>
+        <button class="btn" id="btnEntrar" type="submit">Entrar</button>
+      </form>
+
+      <form id="formCriar" novalidate hidden>
+        <p class="sub" style="margin-bottom:14px">Use o nome e o sobrenome como estão na lista de acessos liberados. Nomes liberados nesta demonstração: Ana Souza, Bruno Lima, Carla Mendes.</p>
+        <div class="row2">
+          <label class="field"><span>Nome</span>
+            <input id="cNome" type="text" autocomplete="given-name" maxlength="60" required>
+          </label>
+          <label class="field"><span>Sobrenome</span>
+            <input id="cSobrenome" type="text" autocomplete="family-name" maxlength="60" required>
+          </label>
+        </div>
+        <label class="field"><span>E-mail</span>
+          <input id="cEmail" type="email" autocomplete="email" inputmode="email" maxlength="120" required>
+        </label>
+        <label class="field"><span>Senha</span>
+          <span class="pw">
+            <input id="cSenha" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+            <button type="button" data-ver="cSenha" aria-pressed="false">Mostrar</button>
+          </span>
+          <span class="hint">Pelo menos 8 caracteres.</span>
+        </label>
+        <button class="btn" id="btnCriar" type="submit">Criar cadastro</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<!-- ===== Painel ===== -->
+<div id="app" hidden>
+  <aside class="side">
+      <div class="logo"><svg viewBox="0 0 250 80" role="img" aria-label="Pet Voyage" style="height:100%;width:auto;display:block"><circle cx="38" cy="40" r="26" fill="#7c5cff"/><path d="M26 44c0-6 5-10 12-10s12 4 12 10-5 8-12 8-12-2-12-8z" fill="#fff"/><circle cx="29" cy="30" r="3.4" fill="#fff"/><circle cx="38" cy="26" r="3.4" fill="#fff"/><circle cx="47" cy="30" r="3.4" fill="#fff"/><path d="M62 18l24-6-14 12z" fill="#b9a8ff"/><text x="76" y="46" font-family="Raleway,Trebuchet MS,sans-serif" font-weight="800" font-size="25" fill="#2f2a4a">PET<tspan font-weight="500">VOYAGE</tspan></text><text x="77" y="64" font-family="Raleway,Trebuchet MS,sans-serif" font-weight="600" font-size="9.5" letter-spacing="2.4" fill="#7c5cff">TRANSPORTE DE ANIMAIS</text></svg></div>
+      <nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="Seções do painel">
+        <button type="button" role="tab" data-aba="metas" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l5-5"/></svg><span>Metas</span></button>
+        <button type="button" role="tab" data-aba="servicos" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg><span>Serviços</span></button>
+        <button type="button" role="tab" data-aba="vendedoras" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8"/></svg><span>Vendedoras</span></button>
+      </nav>
+      <div class="who">
+        <button type="button" class="ghost" id="btnConta" title="Minha conta"><span id="quem"></span></button>
+        <button type="button" class="ghost" id="btnSair">Sair</button>
+      </div>
+  </aside>
+
+  <main class="wrap">
+    <div class="cal card" id="filtros">
+      <div class="cal-head">
+        <div class="cal-ano">
+          <button type="button" class="cal-nav" id="anoAnt" aria-label="Ano anterior">‹</button>
+          <strong id="anoTxt" class="num"></strong>
+          <button type="button" class="cal-nav" id="anoProx" aria-label="Próximo ano">›</button>
+        </div>
+        <button type="button" class="chip-btn" id="btnTodos" aria-pressed="false">Todos os meses</button>
+        <span class="estado" id="estado" role="status"></span>
+      </div>
+      <div class="cal-grid" id="calGrid" role="group" aria-label="Escolha o mês"></div>
+    </div>
+    <!-- Metas -->
+    <section id="v-metas" role="tabpanel">
+      <div id="metasVazio" class="card empty" hidden></div>
+      <div id="metasCorpo" hidden>
+        <div class="hero">
+          <div class="gauge">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="bg" cx="100" cy="100" r="88"></circle>
+              <circle class="fg" id="anel" cx="100" cy="100" r="88"></circle>
+            </svg>
+            <div class="mid"><div class="p" id="mPct">—</div><div class="l">da meta do mês</div></div>
+          </div>
+          <div>
+            <div class="k">Vendas Pet e Travel</div>
+            <div class="vendas" id="mVendas">—</div>
+            <div class="saldo" id="mSaldoBox"><span class="t" id="mSaldoT">Saldo da meta</span><span class="v" id="mSaldo">—</span></div>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Meta do mês</div><div class="v" id="mMeta">—</div></div>
+          <div class="tile"><div class="k">Meta diária</div><div class="v" id="mDiaria">—</div></div>
+          <div class="tile"><div class="k" id="mAcumK">Meta acumulada</div><div class="v" id="mAcum">—</div></div>
+          <div class="tile destaque">
+            <div class="k">Recebido no ato <span class="chip" id="mRecPct">—</span></div>
+            <div class="v" id="mRec">—</div>
+            <div class="bar"><i id="mRecBar" style="width:0"></i></div>
+            <div class="n">do total vendido</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Serviços -->
+    <section id="v-servicos" role="tabpanel" hidden>
+      <div id="avisos"></div>
+      <div class="kpis">
+        <div class="tile"><div class="k">Serviços lançados</div><div class="v" id="kQtd">—</div></div>
+        <div class="tile"><div class="k">Valor vendido</div><div class="v" id="kValor">—</div></div>
+        <div class="tile"><div class="k">Recebido no ato</div><div class="v" id="kRec">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Quantidade de serviços</h2>
+            <p class="sub" id="svSub"></p>
+          </div>
+          <div class="seg-tabs sm" role="group" aria-label="Forma de exibição">
+            <button type="button" id="vzGraf" aria-pressed="true">Gráfico</button>
+            <button type="button" id="vzTab" aria-pressed="false">Tabela</button>
+          </div>
+        </div>
+        <div id="svChart"></div>
+      </div>
+    </section>
+
+    <!-- Vendedoras -->
+    <section id="v-vendedoras" role="tabpanel" hidden>
+      <h2 class="num" style="font-size:1rem">Ranking de vendedoras</h2>
+      <p class="sub" id="rkSub"></p>
+      <ol class="rank" id="rkLista"></ol>
+    </section>
+  </main>
+</div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<dialog id="dlgConta">
+  <h2>Minha conta</h2>
+  <div id="contaMsg" class="msg" role="alert" hidden></div>
+  <form id="formConta" novalidate>
+    <label class="field"><span>Senha atual</span>
+      <input id="sAtual" type="password" autocomplete="current-password" required>
+    </label>
+    <label class="field"><span>Nova senha</span>
+      <input id="sNova" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+      <span class="hint">Pelo menos 8 caracteres.</span>
+    </label>
+    <div class="dlg-acoes">
+      <button type="button" class="btn line" id="contaFechar">Fechar</button>
+      <button type="submit" class="btn" id="contaSalvar">Salvar senha</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===== Servidor de demonstração: tudo roda no navegador, com dados fictícios ===== */
+(function () {
+  'use strict';
+  // ---------- dados fictícios, sempre os mesmos (gerador com semente) ----------
+  var seed = 20261014;
+  function rnd() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+  var SERVICOS = [
+    ['Transporte nacional', 1900, 4200], ['Transporte internacional', 9000, 22000], ['Documentação sanitária', 800, 1900],
+    ['Assessoria de viagem', 1200, 3200], ['Passagem aérea pet', 700, 1800], ['Caixa de transporte', 180, 420],
+    ['Hospedagem pet', 250, 700], ['Consulta veterinária', 120, 380], ['Traslado porta a porta', 400, 1500],
+    ['Seguro viagem pet', 150, 360], ['Microchip e vacinas', 200, 520], ['Pacote premium', 6000, 11000]
+  ];
+  var VENDEDORAS = [['Ana', 1.5], ['Bruna', 1.25], ['Camila', 1], ['Dora', .6], ['Elisa', .35]];
+  var MESES = [
+    { chave: '2026-08', rotulo: 'agosto de 2026', linhas: 34, meta: 380000, dia: 31, dias: 31 },
+    { chave: '2026-09', rotulo: 'setembro de 2026', linhas: 41, meta: 400000, dia: 30, dias: 30 },
+    { chave: '2026-10', rotulo: 'outubro de 2026', linhas: 18, meta: 420000, dia: 14, dias: 31 }
+  ];
+  function sorteio(pesos) {
+    var t = pesos.reduce(function (a, b) { return a + b; }, 0), x = rnd() * t;
+    for (var i = 0; i < pesos.length; i++) { x -= pesos[i]; if (x <= 0) return i; }
+    return pesos.length - 1;
+  }
+  var pesoServ = [10, 4, 9, 7, 8, 5, 3, 4, 3, 4, 5, 1];
+  var LINHAS = {};
+  MESES.forEach(function (m) {
+    var l = [];
+    for (var i = 0; i < m.linhas; i++) {
+      var si = sorteio(pesoServ), sv = SERVICOS[si];
+      var vi = sorteio(VENDEDORAS.map(function (v) { return v[1]; }));
+      var valor = Math.round((sv[1] + rnd() * (sv[2] - sv[1])) * 100) / 100;
+      var frac = [1, 1, .6, .4, .3][Math.floor(rnd() * 5)];
+      l.push({ servico: sv[0], vendedora: VENDEDORAS[vi][0], valor: valor, recebido: Math.round(valor * frac * 100) / 100 });
+    }
+    LINHAS[m.chave] = l;
+  });
+  function r2(n) { return Math.round(n * 100) / 100; }
+  function agora() {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function painel(chave) {
+    var ms = MESES.slice().sort(function (a, b) { return a.chave < b.chave ? 1 : -1; });
+    var meses = ms.map(function (m) { return { chave: m.chave, label: m.rotulo }; });
+    var sel = ms.filter(function (m) { return m.chave === chave; })[0];
+    var todos = chave === 'todos';
+    if (!sel && !todos) { sel = ms[0]; chave = sel.chave; }
+    var linhas = todos ? [].concat.apply([], MESES.map(function (m) { return LINHAS[m.chave]; })) : LINHAS[chave];
+    var sv = {}, vd = {};
+    SERVICOS.forEach(function (s) { sv[s[0]] = { nome: s[0], qtd: 0, valor: 0, recebido: 0 }; });
+    var totV = 0, totR = 0;
+    linhas.forEach(function (l) {
+      var s = sv[l.servico]; s.qtd++; s.valor += l.valor; s.recebido += l.recebido;
+      var v = vd[l.vendedora] = vd[l.vendedora] || { nome: l.vendedora, vendas: 0, valor: 0, recebido: 0, svc: {} };
+      v.vendas++; v.valor += l.valor; v.recebido += l.recebido;
+      var x = v.svc[l.servico] = v.svc[l.servico] || { nome: l.servico, qtd: 0, valor: 0 }; x.qtd++; x.valor += l.valor;
+      totV += l.valor; totR += l.recebido;
+    });
+    var servicos = Object.keys(sv).map(function (k) { var s = sv[k]; return { nome: s.nome, qtd: s.qtd, valor: r2(s.valor), recebido: r2(s.recebido) }; })
+      .sort(function (a, b) { return b.qtd - a.qtd || b.valor - a.valor; });
+    var vendedoras = Object.keys(vd).map(function (k) {
+      var v = vd[k];
+      return { nome: v.nome, vendas: v.vendas, valor: r2(v.valor), recebido: r2(v.recebido), falta: r2(v.valor - v.recebido),
+        servicos: Object.keys(v.svc).map(function (n) { var x = v.svc[n]; return { nome: x.nome, qtd: x.qtd, valor: r2(x.valor) }; })
+          .sort(function (a, b) { return b.valor - a.valor; }) };
+    }).sort(function (a, b) { return b.valor - a.valor; });
+    var metas = null;
+    if (!todos) {
+      var diaria = sel.meta / sel.dias, acum = diaria * sel.dia;
+      metas = { metaMensal: sel.meta, metaDiaria: r2(diaria), metaAcumulada: r2(acum), diaAcumulada: sel.dia,
+        vendas: r2(totV), recebido: r2(totR), saldo: r2(totV - acum), pctMeta: totV / sel.meta * 100, pctRecebido: totV ? totR / totV * 100 : 0 };
+    }
+    return { ok: true, metas: metas, meses: meses, mes: chave,
+      mesLabel: todos ? 'todos os meses' : sel.rotulo, servicos: servicos, vendedoras: vendedoras,
+      totais: { servicos: linhas.length, valor: r2(totV), recebido: r2(totR) }, avisos: [],
+      abasLidas: [], atualizadoEm: agora() };
+  }
+
+  // ---------- cadastros fictícios (guardados só neste navegador) ----------
+  var CHAVE = 'demo_cadastros_v1';
+  var base = [
+    { nome: 'Demo', sobrenome: 'Usuário', email: 'demo@exemplo.com', senha: 'demo12345' },
+    { nome: 'Ana', sobrenome: 'Souza', email: '', senha: '' },
+    { nome: 'Bruno', sobrenome: 'Lima', email: '', senha: '' },
+    { nome: 'Carla', sobrenome: 'Mendes', email: '', senha: '' }
+  ];
+  var pessoas;
+  try { pessoas = JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch (e) { pessoas = null; }
+  if (!pessoas) pessoas = JSON.parse(JSON.stringify(base));
+  function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(pessoas)); } catch (e) { /* sem armazenamento */ } }
+  var sessoes = {}, falhas = {};
+  function chaveNome(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase(); }
+  function pub(p) { return { email: p.email, nome: p.nome, sobrenome: p.sobrenome, status: 'ativo', papel: 'usuario' }; }
+  function token() { var t = ''; for (var i = 0; i < 64; i++) t += '0123456789abcdef'[Math.floor(Math.random() * 16)]; return t; }
+  function doSessao(t) {
+    var e = sessoes[t];
+    var p = e && pessoas.filter(function (x) { return x.email === e; })[0];
+    return p ? p : null;
+  }
+  var SEM = { ok: false, codigo: 'sessao', erro: 'Sua sessão expirou. Entre de novo.' };
+
+  var api = {
+    cadastrar: function (d) {
+      d = d || {};
+      var email = String(d.email || '').trim().toLowerCase(), senha = String(d.senha || '');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return { ok: false, erro: 'Informe um e-mail válido.' };
+      if (senha.length < 8) return { ok: false, erro: 'A senha precisa ter pelo menos 8 caracteres.' };
+      var alvo = pessoas.filter(function (p) { return chaveNome(p.nome) === chaveNome(d.nome) && chaveNome(p.sobrenome) === chaveNome(d.sobrenome); })[0];
+      if (!alvo) return { ok: false, erro: 'Não encontramos esse nome na lista de acessos liberados. Confira nome e sobrenome ou fale com o administrador.' };
+      if (alvo.email) return { ok: false, erro: 'Esta pessoa já tem cadastro. Use a aba Entrar.' };
+      if (pessoas.some(function (p) { return p.email === email; })) return { ok: false, erro: 'Este e-mail já está cadastrado para outra pessoa.' };
+      alvo.email = email; alvo.senha = senha; salvar();
+      return { ok: true, status: 'ativo', mensagem: 'Cadastro concluído. Agora é só entrar com o seu e-mail e a senha.' };
+    },
+    entrar: function (email, senha) {
+      email = String(email || '').trim().toLowerCase();
+      if (!email || !senha) return { ok: false, erro: 'Informe e-mail e senha.' };
+      if ((falhas[email] || 0) >= 5) return { ok: false, erro: 'Muitas tentativas seguidas. Recarregue a página para tentar de novo.' };
+      var p = pessoas.filter(function (x) { return x.email === email; })[0];
+      if (!p || p.senha !== senha) { falhas[email] = (falhas[email] || 0) + 1; return { ok: false, erro: 'E-mail ou senha incorretos.' }; }
+      falhas[email] = 0;
+      var t = token(); sessoes[t] = email;
+      return { ok: true, token: t, usuario: pub(p) };
+    },
+    sair: function (t) { delete sessoes[t]; return { ok: true }; },
+    sessao: function (t) { var p = doSessao(t); return p ? { ok: true, usuario: pub(p) } : SEM; },
+    trocarSenha: function (t, atual, nova) {
+      var p = doSessao(t); if (!p) return SEM;
+      if (p.senha !== atual) return { ok: false, erro: 'A senha atual não confere.' };
+      if (String(nova).length < 8) return { ok: false, erro: 'A senha precisa ter pelo menos 8 caracteres.' };
+      p.senha = nova; salvar(); return { ok: true, mensagem: 'Senha alterada.' };
+    },
+    getPainel: function (t, mes) {
+      if (!doSessao(t)) return SEM;
+      return painel(mes || '2026-10');
+    }
+  };
+
+  function make(s, f) {
+    return new Proxy({}, { get: function (_, nome) {
+      if (nome === 'withSuccessHandler') return function (fn) { return make(fn, f); };
+      if (nome === 'withFailureHandler') return function (fn) { return make(s, fn); };
+      return function () {
+        var a = [].slice.call(arguments);
+        setTimeout(function () {
+          var r;
+          try { r = api[nome] ? api[nome].apply(null, a) : { ok: false, erro: 'Função desconhecida.' }; }
+          catch (e) { if (f) return f(e); r = { ok: false, erro: String(e) }; }
+          if (s) s(JSON.parse(JSON.stringify(r)));
+        }, 120);
+      };
+    } });
+  }
+  window.google = { script: { run: make(null, null) } };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.getElementById('demoPreencher');
+    if (b) b.addEventListener('click', function () {
+      document.getElementById('eEmail').value = 'demo@exemplo.com';
+      document.getElementById('eSenha').value = 'demo12345';
+      document.getElementById('btnEntrar').focus();
+    });
+  });
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const moeda = (v, casas) => (v == null || isNaN(v)) ? '—'
+    : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas == null ? 2 : casas, maximumFractionDigits: casas == null ? 2 : casas });
+  const pct = (v, d) => (v == null || isNaN(v)) ? '—'
+    : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%';
+  const num = v => Number(v || 0).toLocaleString('pt-BR');
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const CIRC = 552.92;
+
+  const S = { token: '', user: null, aba: 'metas', mes: '', dados: null, vz: 'grafico',
+              ano: 0 };
+
+  // ---------- token guardado no navegador (com plano B em memória) ----------
+  const TOKEN_KEY = 'demo_token';
+  let tokenMem = '';
+  function lerToken() { try { return localStorage.getItem(TOKEN_KEY) || tokenMem; } catch (e) { return tokenMem; } }
+  function guardarToken(t) {
+    tokenMem = t || '';
+    try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) { /* sem armazenamento */ }
+  }
+
+  // ---------- chamadas ao Apps Script ----------
+  function chamar(fn, args) {
+    return new Promise((ok, falha) => {
+      const r = google.script.run.withSuccessHandler(ok).withFailureHandler(falha);
+      r[fn].apply(r, args);
+    });
+  }
+  const ERRO_REDE = 'Não foi possível falar com o servidor. Verifique a conexão e tente de novo.';
+  async function api(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    try {
+      const r = await chamar(fn, [S.token].concat(args));
+      if (r && r.codigo === 'sessao') encerrar(r.erro);
+      return r || { ok: false, erro: ERRO_REDE };
+    } catch (e) {
+      return { ok: false, erro: ERRO_REDE };
+    }
+  }
+
+  // ---------- entrada ----------
+  function msgAuth(texto, tipo) {
+    const el = $('authMsg');
+    el.textContent = texto || '';
+    el.className = 'msg ' + (tipo || '');
+    el.hidden = !texto;
+  }
+  function mostrarAuth(texto, tipo) {
+    $('splash').hidden = true;
+    $('app').hidden = true;
+    $('auth').hidden = false;
+    msgAuth(texto, tipo);
+  }
+  function irPara(aba) {
+    const entrar = aba === 'entrar';
+    $('tabEntrar').setAttribute('aria-selected', entrar);
+    $('tabCriar').setAttribute('aria-selected', !entrar);
+    $('formEntrar').hidden = !entrar;
+    $('formCriar').hidden = entrar;
+    msgAuth('');
+  }
+  function travar(btn, ocupado, textoOcupado, textoNormal) {
+    btn.disabled = ocupado;
+    btn.textContent = ocupado ? textoOcupado : textoNormal;
+  }
+  $('tabEntrar').addEventListener('click', () => irPara('entrar'));
+  $('tabCriar').addEventListener('click', () => irPara('criar'));
+  document.querySelectorAll('[data-ver]').forEach(b => b.addEventListener('click', () => {
+    const campo = $(b.dataset.ver);
+    const mostrar = campo.type === 'password';
+    campo.type = mostrar ? 'text' : 'password';
+    b.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+    b.setAttribute('aria-pressed', mostrar);
+  }));
+
+  $('formEntrar').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('eEmail').value.trim();
+    if (!email || !$('eSenha').value) return msgAuth('Informe e-mail e senha.', 'erro');
+    travar($('btnEntrar'), true, 'Entrando…', 'Entrar');
+    let r;
+    try { r = await chamar('entrar', [email, $('eSenha').value]); } catch (err) { r = null; }
+    travar($('btnEntrar'), false, '', 'Entrar');
+    if (!r) return msgAuth(ERRO_REDE, 'erro');
+    if (!r.ok) return msgAuth(r.erro, r.codigo === 'pendente' ? 'aviso' : 'erro');
+    $('eSenha').value = '';
+    S.token = r.token; S.user = r.usuario;
+    guardarToken(r.token);
+    iniciarApp();
+  });
+
+  $('formCriar').addEventListener('submit', async e => {
+    e.preventDefault();
+    const d = { nome: $('cNome').value, sobrenome: $('cSobrenome').value, email: $('cEmail').value, senha: $('cSenha').value };
+    if (!d.nome.trim() || !d.sobrenome.trim() || !d.email.trim() || !d.senha) {
+      return msgAuth('Preencha nome, sobrenome, e-mail e senha.', 'erro');
+    }
+    if (d.senha.length < 8) return msgAuth('A senha precisa ter pelo menos 8 caracteres.', 'erro');
+    travar($('btnCriar'), true, 'Enviando…', 'Criar cadastro');
+    let r;
+    try { r = await chamar('cadastrar', [d]); } catch (err) { r = null; }
+    travar($('btnCriar'), false, '', 'Criar cadastro');
+    if (!r) return msgAuth(ERRO_REDE, 'erro');
+    if (!r.ok) return msgAuth(r.erro, 'erro');
+    const email = d.email.trim().toLowerCase();
+    ['cNome', 'cSobrenome', 'cEmail', 'cSenha'].forEach(id => { $(id).value = ''; });
+    irPara('entrar');
+    $('eEmail').value = email;
+    msgAuth(r.mensagem, r.status === 'ativo' ? 'ok' : 'aviso');
+    $('eSenha').focus();
+  });
+
+  function encerrar(texto) {
+    guardarToken('');
+    S.token = ''; S.user = null; S.dados = null; S.usuarios = []; S.temp = null;
+    mostrarAuth(texto || '', texto ? 'aviso' : '');
+    irPara('entrar');
+    msgAuth(texto || '', texto ? 'aviso' : '');
+  }
+  $('btnSair').addEventListener('click', async () => {
+    const t = S.token;
+    encerrar('');
+    try { await chamar('sair', [t]); } catch (e) { /* já saiu daqui */ }
+  });
+
+  // ---------- painel ----------
+  function iniciarApp() {
+    $('splash').hidden = true;
+    $('auth').hidden = true;
+    $('app').hidden = false;
+    $('quem').textContent = S.user.nome;
+    trocarAba(S.aba);
+    carregarPainel(S.mes);
+  }
+
+  function trocarAba(aba) {
+    S.aba = aba;
+    document.querySelectorAll('.tabs [role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.aba === aba));
+    ['metas', 'servicos', 'vendedoras'].forEach(a => { $('v-' + a).hidden = a !== aba; });
+    esconderTip();
+    if (aba === 'metas' && S.dados) animarAnel();
+  }
+  document.querySelectorAll('.tabs [role="tab"]').forEach(b => b.addEventListener('click', () => trocarAba(b.dataset.aba)));
+
+  async function carregarPainel(mes) {
+    $('estado').textContent = 'Atualizando…';
+    const r = await api('getPainel', mes || '');
+    if (!r.ok) {
+      if (r.codigo !== 'sessao') $('estado').textContent = r.erro || 'Não foi possível carregar os dados.';
+      return;
+    }
+    S.dados = r; S.mes = r.mes;
+    renderTudo();
+  }
+
+  function renderTudo() {
+    const d = S.dados;
+    $('estado').innerHTML = 'Atualizado em ' + esc(d.atualizadoEm) + ' <button type="button" class="linkbtn" id="btnAtualizar">Atualizar</button>';
+    $('btnAtualizar').addEventListener('click', () => carregarPainel(S.mes));
+    renderChips();
+    $('avisos').innerHTML = (d.avisos || []).map(a => '<div class="aviso-bloco">' + esc(a) + '</div>').join('');
+    renderMetas();
+    renderServicos();
+    renderVendedoras();
+  }
+
+  const MESES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  function renderChips() {
+    const d = S.dados;
+    const disp = {};
+    d.meses.forEach(m => { disp[m.chave] = true; });
+    const anos = d.meses.map(m => +m.chave.slice(0, 4));
+    const minA = Math.min.apply(null, anos), maxA = Math.max.apply(null, anos);
+    if (d.mes !== 'todos') S.ano = +d.mes.slice(0, 4);
+    if (!S.ano) S.ano = maxA;
+    S.ano = Math.max(minA, Math.min(maxA, S.ano));
+    $('anoTxt').textContent = S.ano;
+    $('anoAnt').disabled = S.ano <= minA;
+    $('anoProx').disabled = S.ano >= maxA;
+    $('btnTodos').setAttribute('aria-pressed', d.mes === 'todos');
+    $('calGrid').innerHTML = MESES_CURTO.map((nome, i) => {
+      const chave = S.ano + '-' + String(i + 1).padStart(2, '0');
+      const tem = !!disp[chave];
+      return '<button type="button" class="mes" data-mes="' + chave + '"' + (tem ? '' : ' disabled') +
+        ' aria-pressed="' + (chave === d.mes) + '">' + nome + '<small>' + (tem ? S.ano : 'sem aba') + '</small></button>';
+    }).join('');
+    $('calGrid').querySelectorAll('button:not(:disabled)').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.mes !== S.mes) carregarPainel(b.dataset.mes);
+    }));
+  }
+  $('anoAnt').addEventListener('click', () => { S.ano--; renderChips(); });
+  $('anoProx').addEventListener('click', () => { S.ano++; renderChips(); });
+  $('btnTodos').addEventListener('click', () => { if (S.mes !== 'todos') carregarPainel('todos'); });
+
+  // ---------- metas ----------
+  let alvoAnel = CIRC;
+  function animarAnel() {
+    const el = $('anel');
+    el.style.strokeDashoffset = CIRC;
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.strokeDashoffset = alvoAnel; }));
+  }
+  function renderMetas() {
+    const d = S.dados, m = d.metas;
+    if (!m) {
+      $('metasCorpo').hidden = true;
+      $('metasVazio').hidden = false;
+      $('metasVazio').textContent = d.mes === 'todos'
+        ? 'Escolha um mês para ver as metas.'
+        : 'Não encontrei o bloco de metas na aba de ' + d.mesLabel + '.';
+      return;
+    }
+    $('metasVazio').hidden = true;
+    $('metasCorpo').hidden = false;
+    $('mPct').textContent = pct(m.pctMeta, 1);
+    $('mVendas').textContent = moeda(m.vendas);
+    $('mSaldo').textContent = moeda(m.saldo);
+    const neg = (m.saldo || 0) < 0;
+    $('mSaldoBox').className = 'saldo ' + (neg ? 'neg' : 'pos');
+    $('mSaldoT').textContent = neg ? 'Saldo da meta (falta vender)' : 'Saldo da meta (meta batida)';
+    $('mMeta').textContent = moeda(m.metaMensal);
+    $('mDiaria').textContent = moeda(m.metaDiaria);
+    $('mAcumK').textContent = m.diaAcumulada ? 'Meta acumulada até o dia ' + m.diaAcumulada : 'Meta acumulada';
+    $('mAcum').textContent = moeda(m.metaAcumulada);
+    $('mRec').textContent = moeda(m.recebido);
+    $('mRecPct').textContent = pct(m.pctRecebido, 0);
+    $('mRecBar').style.width = Math.min(m.pctRecebido, 100) + '%';
+    alvoAnel = CIRC * (1 - Math.min(m.pctMeta, 100) / 100);
+    if (S.aba === 'metas') animarAnel();
+  }
+
+  // ---------- serviços ----------
+  function renderServicos() {
+    const d = S.dados, t = d.totais;
+    $('kQtd').textContent = num(t.servicos);
+    $('kValor').textContent = moeda(t.valor);
+    $('kRec').textContent = moeda(t.recebido);
+    $('svSub').textContent = 'Serviços lançados em ' + d.mesLabel + ', do mais vendido ao menos vendido.';
+    $('vzGraf').setAttribute('aria-pressed', S.vz === 'grafico');
+    $('vzTab').setAttribute('aria-pressed', S.vz === 'tabela');
+
+    const box = $('svChart');
+    const lista = d.servicos;
+    if (!lista.length) { box.innerHTML = '<p class="empty">Nenhum serviço lançado em ' + esc(d.mesLabel) + '.</p>'; return; }
+
+    if (S.vz === 'tabela') {
+      box.innerHTML = '<div class="tscroll"><table class="tbl"><thead><tr><th>Serviço</th><th class="r">Quantidade</th><th class="r">Valor vendido</th><th class="r">Recebido no ato</th></tr></thead><tbody>' +
+        lista.map(s => '<tr><td>' + esc(s.nome) + '</td><td class="r">' + num(s.qtd) + '</td><td class="r">' + moeda(s.valor) + '</td><td class="r">' + moeda(s.recebido) + '</td></tr>').join('') +
+        '</tbody><tfoot><tr><td>Total</td><td class="r">' + num(t.servicos) + '</td><td class="r">' + moeda(t.valor) + '</td><td class="r">' + moeda(t.recebido) + '</td></tr></tfoot></table></div>';
+      return;
+    }
+
+    const max = Math.max.apply(null, lista.map(s => s.qtd).concat([1]));
+    box.innerHTML = '<ul class="bars" aria-label="Quantidade de serviços">' + lista.map((s, i) =>
+      '<li class="brow' + (s.qtd === 0 ? ' zero' : '') + '" tabindex="0" data-i="' + i + '" aria-label="' +
+        esc(s.nome) + ': ' + s.qtd + (s.qtd === 1 ? ' serviço' : ' serviços') + ', ' + esc(moeda(s.valor)) + ' vendidos">' +
+        '<span class="bl">' + esc(s.nome) + '</span>' +
+        '<span class="bt"><i class="bb" style="width:calc((100% - var(--lab)) * ' + (s.qtd / max).toFixed(4) + ')"></i>' +
+        '<span class="bv"><b>' + num(s.qtd) + '</b><span class="bm">' + esc(moeda(s.valor, 0)) + '</span></span></span></li>').join('') + '</ul>';
+  }
+  $('vzGraf').addEventListener('click', () => { S.vz = 'grafico'; if (S.dados) renderServicos(); });
+  $('vzTab').addEventListener('click', () => { S.vz = 'tabela'; if (S.dados) renderServicos(); });
+
+  // dica ao passar o mouse ou focar uma barra
+  const tip = $('tip');
+  function mostrarTip(li, x, y) {
+    const s = S.dados && S.dados.servicos[Number(li.dataset.i)];
+    if (!s) return;
+    tip.innerHTML = '<b>' + esc(s.nome) + '</b><span>Quantidade:</span> ' + num(s.qtd) +
+      '<br><span>Valor vendido:</span> ' + esc(moeda(s.valor)) + '<br><span>Recebido no ato:</span> ' + esc(moeda(s.recebido));
+    tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let left = x + 14, top = y + 14;
+    if (left + w > window.innerWidth - 8) left = Math.max(8, x - w - 14);
+    if (top + h > window.innerHeight - 8) top = Math.max(8, y - h - 14);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function esconderTip() { tip.hidden = true; }
+  const chart = $('svChart');
+  chart.addEventListener('mousemove', e => {
+    const li = e.target.closest('.brow');
+    li ? mostrarTip(li, e.clientX, e.clientY) : esconderTip();
+  });
+  chart.addEventListener('mouseleave', esconderTip);
+  chart.addEventListener('focusin', e => {
+    const li = e.target.closest('.brow');
+    if (!li) return;
+    const r = li.getBoundingClientRect();
+    mostrarTip(li, r.left + Math.min(r.width / 2, 160), r.bottom - 6);
+  });
+  chart.addEventListener('focusout', esconderTip);
+  window.addEventListener('scroll', esconderTip, true);
+
+  // ---------- vendedoras ----------
+  function renderVendedoras() {
+    const d = S.dados, lista = d.vendedoras;
+    $('rkSub').textContent = lista.length
+      ? 'Ordenadas pelo valor vendido acumulado em ' + d.mesLabel + '.'
+      : '';
+    if (!lista.length) { $('rkLista').innerHTML = '<li class="empty">Nenhuma venda lançada em ' + esc(d.mesLabel) + '.</li>'; return; }
+    const total = d.totais.valor || 1;
+    $('rkLista').innerHTML = lista.map((v, i) => {
+      const parte = v.valor / total * 100;
+      return '<li class="rk' + (i === 0 ? ' first' : '') + '">' +
+        '<div class="rk-top"><span class="pos">' + (i + 1) + '</span>' +
+          '<div class="rk-name"><h3>' + esc(v.nome) + '</h3><p>' + num(v.vendas) + (v.vendas === 1 ? ' venda' : ' vendas') + ' e ' + pct(parte, 0) + ' do total vendido</p></div>' +
+          '<div class="rk-val"><span class="big">' + esc(moeda(v.valor)) + '</span><span class="mut">valor vendido acumulado</span></div></div>' +
+        '<div class="rk-share" aria-hidden="true"><i style="width:' + parte.toFixed(1) + '%"></i></div>' +
+        '<dl class="rk-fin"><div><dt>Recebido no ato</dt><dd>' + esc(moeda(v.recebido)) + '</dd></div>' +
+          '<div><dt>Falta receber</dt><dd>' + esc(moeda(v.falta)) + '</dd></div></dl>' +
+        '<div class="rk-sv-h"><span>Serviços que vendeu</span><span>Qtd</span><span>Valor</span></div>' +
+        '<ul class="rk-sv">' + v.servicos.map(s =>
+          '<li><span>' + esc(s.nome) + '</span><span class="q">' + num(s.qtd) + '</span><span class="v">' + esc(moeda(s.valor)) + '</span></li>').join('') + '</ul></li>';
+    }).join('');
+  }
+
+  // ---------- minha conta ----------
+  const dlg = $('dlgConta');
+  function msgConta(texto, tipo) {
+    const el = $('contaMsg');
+    el.textContent = texto || ''; el.className = 'msg ' + (tipo || ''); el.hidden = !texto;
+  }
+  $('btnConta').addEventListener('click', () => {
+    msgConta('');
+    $('formConta').reset();
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  });
+  $('contaFechar').addEventListener('click', () => dlg.close());
+  $('formConta').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!$('sAtual').value || !$('sNova').value) return msgConta('Preencha a senha atual e a nova senha.', 'erro');
+    if ($('sNova').value.length < 8) return msgConta('A nova senha precisa ter pelo menos 8 caracteres.', 'erro');
+    travar($('contaSalvar'), true, 'Salvando…', 'Salvar senha');
+    const r = await api('trocarSenha', $('sAtual').value, $('sNova').value);
+    travar($('contaSalvar'), false, '', 'Salvar senha');
+    if (!r.ok) return msgConta(r.erro, 'erro');
+    $('formConta').reset();
+    msgConta(r.mensagem, 'ok');
+  });
+
+  // ---------- início ----------
+  async function iniciar() {
+    const t = lerToken();
+    if (!t) return mostrarAuth('', '');
+    S.token = t;
+    let r;
+    try { r = await chamar('sessao', [t]); } catch (e) { r = null; }
+    if (r && r.ok) { S.user = r.usuario; return iniciarApp(); }
+    guardarToken('');
+    S.token = '';
+    mostrarAuth(r && r.erro ? r.erro : '', r && r.erro ? 'aviso' : '');
+  }
+  iniciar();
+})();
+</script>
+</body>
+</html>
